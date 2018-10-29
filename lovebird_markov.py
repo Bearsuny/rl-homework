@@ -5,6 +5,7 @@ import pygame
 from pygame.locals import *
 
 import numpy as np
+from collections import Iterable
 
 
 class GameConfig:
@@ -38,26 +39,29 @@ class GameItem(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def blit(self, screen):
-        
         screen.blit(self.image, self.rect)
 
 
 class Grid():
-    def __init__(self, size):
-        self.size = size
+    def __init__(self, color, width, mode):
+        self.containers = []
+        self.color = color
+        self.width = width
+        self.mode = mode
+        if mode == 'rect':
+            self.text_font = pygame.font.SysFont('times', 15)
+            self.text_surface = self.text_font.render(str(0), True, (0, 0, 0))
 
     def blit(self, screen):
-        screen_size = screen.get_size()
-        h_points = [item for item in range(0, screen_size[0], self.size[0])]
-        v_points = [item for item in range(0, screen_size[1], self.size[1])]
-        h_lines = [((item, 0), (item, screen_size[1])) for item in h_points]
-        v_lines = [((0, item), (screen_size[0], item)) for item in v_points]
-        line_width = 1
-        line_color = (255, 255, 255)
-        for item in h_lines:
-            pygame.draw.line(screen, line_color, *item, line_width)
-        for item in v_lines:
-            pygame.draw.line(screen, line_color, *item, line_width)
+        if self.mode == 'line':
+            for item in self.containers:
+                pygame.draw.line(screen, self.color, *item, self.width)
+        if self.mode == 'rect':
+            for i, item in enumerate(self.containers):
+                pygame.draw.rect(screen, self.color, item, self.width)
+                self.text_surface = self.text_font.render(str(i), True, (0, 0, 0))
+                pos = item[0]
+                screen.blit(self.text_surface, (pos[0] + 5, pos[1] + 5))
 
 
 class Brick(GameItem):
@@ -112,6 +116,12 @@ class Bird(GameItem):
         self.rect = last_rect
         return direction
 
+    def find_mate(self, bird):
+        return True if pygame.sprite.collide_mask(self, bird) else False
+
+    def reset(self):
+        self.rect[0], self.rect[1] = 0, 0
+
 
 class LoveBirdGame():
     def __init__(self, caption, window_size):
@@ -119,6 +129,7 @@ class LoveBirdGame():
         pygame.display.set_caption(caption)
         self.screen = pygame.display.set_mode(window_size)
         self.clock = pygame.time.Clock()
+        self.history_grid = Grid((255, 0, 0), 5, 'rect')
 
     def loop(self, bg, grid, bricks, birds, mode):
         while True:
@@ -135,34 +146,55 @@ class LoveBirdGame():
                     pygame.quit()
                     sys.exit()
 
-            bg.blit(self.screen)
-            grid.blit(self.screen)
-            for item in bricks:
-                item.blit(self.screen)
-            for item in birds:
-                item.blit(self.screen)
+            male_bird, female_bird = [bird for bird in birds]
+            pos = ((male_bird.rect[0], male_bird.rect[1]), GameConfig.grid_size)
+            if pos not in self.history_grid.containers:
+                self.history_grid.containers.append(pos)
+
+            self.blit(bg, grid, bricks, birds, self.history_grid)
 
             if GameConfig.loop_flag:
-                action = np.random.choice(4)
-                male_bird, female_bird = [bird for bird in birds]
+                action = male_bird.collision(GameConfig.grid_size[0], bricks, GameConfig.window_size)
                 male_bird.update(GameConfig.grid_size[0], action)
+                if male_bird.find_mate(female_bird):
+                    GameConfig.loop_flag = not GameConfig.loop_flag
+                    self.reset()
+                    male_bird.reset()
 
             pygame.display.update()
+
+    def blit(self, *objs):
+        for obj in objs:
+            if isinstance(obj, Iterable):
+                for item in obj:
+                    item.blit(self.screen)
+            else:
+                obj.blit(self.screen)
+
+    def reset(self):
+        self.history_grid.containers = []
 
 
 def game_env_init():
     game = LoveBirdGame(GameConfig.caption, GameConfig.window_size)
 
     bg = GameItem(os.path.join(GameConfig.root_path, GameConfig.resource_path, 'background.png'), GameConfig.window_size)
-    grid = Grid(GameConfig.grid_size)
+
+    grid = Grid((255, 255, 255), 1, 'line')
+    h_points = [item for item in range(0, GameConfig.window_size[0], GameConfig.grid_size[0])]
+    v_points = [item for item in range(0, GameConfig.window_size[1], GameConfig.grid_size[1])]
+    h_lines = [((item, 0), (item, GameConfig.window_size[1])) for item in h_points]
+    v_lines = [((0, item), (GameConfig.window_size[0], item)) for item in v_points]
+    grid.containers += h_lines
+    grid.containers += v_lines
 
     bricks = pygame.sprite.Group()
     for i, location_item, height_item in zip(range(4), [5, 5, 10, 10], [4, 3, 3, 4]):
         brick = Brick(os.path.join(GameConfig.root_path, GameConfig.resource_path, 'brick.png'), GameConfig.brick_size, GameConfig.grid_size)
         height = brick.image.get_size()[1] - height_item * GameConfig.grid_size[1]
-        flip_flag = False
+        flip_flag = True
         location = [location_item * GameConfig.grid_size[0], 0]
-        if i % 2 == 1:
+        if i % 2 == 0:
             flip_flag = not flip_flag
             location[1] = GameConfig.window_size[1] - height_item * GameConfig.grid_size[1]
         brick.chop_with_flip(height, flip_flag, location)
