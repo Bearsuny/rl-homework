@@ -4,14 +4,6 @@ import pygame
 from pygame.locals import *
 
 
-def screen_blit(screen, bg, birds, bricks, window_size):
-    screen.blit(bg, (0, 0))
-    for item in birds:
-        screen.blit(item.image, item.rect)
-    for item in bricks:
-        screen.blit(item.image, item.rect)
-
-
 class Bird(pygame.sprite.Sprite):
     def __init__(self, file_path, bird_height, gender, window_size=None):
         pygame.sprite.Sprite.__init__(self)
@@ -25,13 +17,13 @@ class Bird(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, step, direction):
-        if direction == 0: # Down
+        if direction == 0:  # Down
             self.rect.move_ip(0, step)
-        if direction == 1: # Right
+        if direction == 1:  # Right
             self.rect.move_ip(step, 0)
-        if direction == 2: # Up
+        if direction == 2:  # Up
             self.rect.move_ip(0, -step)
-        if direction == 3: # Left
+        if direction == 3:  # Left
             self.rect.move_ip(-step, 0)
 
     def collision(self, step, bricks, window_size):
@@ -86,19 +78,28 @@ def bricks_init(file_path, brick_weight, chop_heights):
         bricks.add(brick)
     return bricks
 
+
 def find_mate(bird_male, bird_female):
     return True if pygame.sprite.collide_mask(bird_male, bird_female) else False
+
+
+def screen_blit(screen, bg, birds, bricks, window_size):
+    screen.blit(bg, (0, 0))
+    for item in birds:
+        screen.blit(item.image, item.rect)
+    for item in bricks:
+        screen.blit(item.image, item.rect)
 
 
 if __name__ == '__main__':
     np.random.seed(0)
 
     pygame.init()
-    pygame.display.set_caption('lovebirds-fengfan')
+    pygame.display.set_caption('lovebird-fengfan')
 
     clock = pygame.time.Clock()
 
-    window_size = (1066, 600)
+    window_size = (1000, 800)
     screen = pygame.display.set_mode(window_size)
 
     bg = bg_init('./assets/bg.png', window_size)
