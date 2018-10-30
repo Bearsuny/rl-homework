@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/bearsuny/anaconda3/envs/nsdl/bin/python",
+    "python.pythonPath": "/home/fb/anaconda3/envs/rlenv/bin/python",
     "python.formatting.autopep8Args": [
         "--max-line-length=200"
     ],
