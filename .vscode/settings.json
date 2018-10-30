@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "/home/bearsuny/anaconda3/envs/nsdl/bin/python",
+    "python.formatting.autopep8Args": [
+        "--max-line-length=200"
+    ],
+    "python.linting.enabled": false,
+}
