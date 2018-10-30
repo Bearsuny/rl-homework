@@ -34,6 +34,8 @@ class GameConfig:
     actions = ['e', 'w', 's', 'n']
     gamma = 1
 
+    markov_mode = 'random'  # [random, policy_iteration, value_iteration]
+
 
 class GameItem(pygame.sprite.Sprite):
     def __init__(self, source_path, size):
@@ -146,17 +148,6 @@ class LoveBirdGame():
         while True:
             self.clock.tick(GameConfig.fps)
 
-            for event in pygame.event.get():
-                if event.type == KEYDOWN:
-                    if event.key == K_RETURN:
-                        GameConfig.loop_flag = not GameConfig.loop_flag
-                    if event.key == K_ESCAPE:
-                        pygame.image.save(self.screen, os.path.join(GameConfig.root_path, GameConfig.save_path, f'{GameConfig.save_number}.png'))
-                        GameConfig.save_number += 1
-                elif event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-
             male_bird, female_bird = [bird for bird in birds]
             pos = ((male_bird.rect[0], male_bird.rect[1]), GameConfig.grid_size)
             if pos not in self.history_grid.containers:
@@ -169,16 +160,26 @@ class LoveBirdGame():
 
                 state_x = male_bird.rect[1] // GameConfig.grid_size[1]
                 state_y = male_bird.rect[0] // GameConfig.grid_size[0]
-
                 action = action_advice([state_x, state_y])
-                print([state_x, state_y], action)
+                # print([state_x, state_y], action)
                 male_bird.update(GameConfig.grid_size[0], action)
                 if male_bird.find_mate(female_bird):
                     GameConfig.loop_flag = not GameConfig.loop_flag
-                    # self.reset()
-                    # male_bird.reset()
 
             pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    if event.key == K_RETURN:
+                        GameConfig.loop_flag = not GameConfig.loop_flag
+                        self.reset()
+                        male_bird.reset()
+                    if event.key == K_ESCAPE:
+                        pygame.image.save(self.screen, os.path.join(GameConfig.root_path, GameConfig.save_path, f'{GameConfig.save_number}.png'))
+                        GameConfig.save_number += 1
+                elif event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
 
     def blit(self, *objs):
         for obj in objs:
@@ -193,7 +194,7 @@ class LoveBirdGame():
 
 
 class Markov():
-    def __init__(self, reward_grid, reward_category, actions, gamma):
+    def __init__(self, reward_grid, reward_category, actions, gamma, mode):
         self.i_rewards = reward_grid  # immediate_reward
 
         self.s_states = []  # search
@@ -215,15 +216,40 @@ class Markov():
         for state in self.c_states:
             self.v_values[state[0]][state[1]] = -100000
 
+        self.pi_values = np.ones((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.int) * (1/len(actions))
+
+        self.mode = mode
+
+        if self.mode == 'random':
+            self.policy_evaluation()
+        if self.mode == 'policy_iteration':
+            self.policy_iteration()
+        if self.mode == 'value_iteration':
+            self.value_iteration()
+
+    def get_next_state(self, state, action):
+        next_state = state.copy()
+        if action == 'e':
+            next_state[1] += 1
+        if action == 'w':
+            next_state[1] -= 1
+        if action == 's':
+            next_state[0] += 1
+        if action == 'n':
+            next_state[0] -= 1
+        if not (next_state in self.s_states or next_state in self.e_states):
+            next_state = state.copy()
+        return next_state
+
     # pi(a|s)
-    def pi_function(self, state, action):
-        return 1/len(self.actions)
+    def get_pi_value(self, state, action):
+        return self.pi_values[state[0]][state[1]][self.actions.index(action)]
 
     # v_pi(s)
     def state_value_function(self, state):
         value = 0
         for action in self.actions:
-            value += self.pi_function(state, action) * self.action_value_function(state, action)
+            value += self.get_pi_value(state, action) * self.action_value_function(state, action)
         return value
 
     # q_pi(s,a)
@@ -245,29 +271,35 @@ class Markov():
             self.v_values = np.around(self.v_values, decimals=0)
             if (last_v_values == self.v_values).all():
                 break
-        print(k)
+        print(f'{k} iterations for policy evaluation in {self.mode} mode.')
 
-    def get_next_state(self, state, action):
-        next_state = state.copy()
-        if action == 'e':
-            next_state[1] += 1
-        if action == 'w':
-            next_state[1] -= 1
-        if action == 's':
-            next_state[0] += 1
-        if action == 'n':
-            next_state[0] -= 1
-        if not (next_state in self.s_states or next_state in self.e_states):
-            next_state = state.copy()
-        return next_state
+    def policy_iteration(self):
+        k = 0
+        while True:
+            last_pi_values = self.pi_values.copy()
+            self.policy_evaluation()
+            for i, state in enumerate(self.s_states):
+                pi_values_candidate = []
+                pi_value_slice = self.pi_values[state[0]][state[1]]
+                for j, pi_value in enumerate(pi_value_slice):
+                    if pi_value == max(pi_value_slice):
+                        pi_values_candidate.append(pi_value)
+
+    def value_iteration(self):
+        pass
 
     def give_action_advice(self, state):
         v_values_candidate = []
         for action in self.actions:
             next_state = self.get_next_state(state, action)
             v_values_candidate.append(self.v_values[next_state[0]][next_state[1]])
-        print(v_values_candidate)
-        return self.actions[v_values_candidate.index(max(v_values_candidate))]
+        action_candidate = []
+        for i, v_value in enumerate(v_values_candidate):
+            if v_value == max(v_values_candidate):
+                action_candidate.append(i)
+        action_candidate = np.array(action_candidate, dtype=np.int)
+        # print(action_candidate)
+        return self.actions[np.random.choice(action_candidate, 1)[0]]
 
 
 def game_env_init():
@@ -321,21 +353,15 @@ def test_policy_evaluation():
     reward_grid = -np.ones((4, 4), dtype=np.int)
     reward_grid[0][0] = 0
     reward_grid[3][3] = 0
-    markov = Markov(reward_grid, [-1, 1, 0], GameConfig.actions, GameConfig.gamma)
+    markov = Markov(reward_grid, [-1, 1, 0], GameConfig.actions, GameConfig.gamma, GameConfig.markov_mode)
     print(markov.i_rewards)
-    print(markov.v_values)
-    markov.policy_evaluation()
     print(markov.v_values)
 
 
 if __name__ == '__main__':
     np.set_printoptions(linewidth=400)
-    markov = Markov(*markov_env_init(), GameConfig.actions, GameConfig.gamma)
-    # print(markov.i_rewards)
-    # print(markov.v_values)
-    markov.policy_evaluation()
-    print(markov.v_values)
-    # print(markov.give_action_advice([0, 0]))
+
+    markov = Markov(*markov_env_init(), GameConfig.actions, GameConfig.gamma, GameConfig.markov_mode)
     game, *game_obj = game_env_init()
     game.loop(*game_obj, action_advice=markov.give_action_advice)
 
