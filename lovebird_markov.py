@@ -22,7 +22,7 @@ class GameConfig:
     bird_size = (780, 690)
     female_bird_pos = col-1
 
-    fps = 10
+    fps = 30
     save_number = 0
     loop_flag = False
 
@@ -183,6 +183,7 @@ class LoveBirdGame():
                             GameConfig.markov_mode_count += 1
                         else:
                             GameConfig.markov_mode_count = 0
+                        policy.mode = policy.mode_space[2]
                         policy.change_mode(policy.mode)
                         self.v_values_grid.containers = policy.v_values
                     if event.key == K_ESCAPE:
@@ -403,6 +404,8 @@ def test_policy_evaluation():
     reward_grid[0][0] = 0
     reward_grid[3][3] = 0
     markov = Markov(reward_grid, [-1, 1, 0], GameConfig.actions, GameConfig.gamma, GameConfig.markov_mode_space)
+    markov.mode = markov.mode_space[0]
+    markov.change_mode(markov.mode)
     print(markov.i_rewards)
     print(markov.v_values)
 
