@@ -37,6 +37,9 @@ class GameConfig:
     markov_mode_space = ['random', 'policy_iteration', 'value_iteration']
     markov_mode_count = 0
 
+    monte_mode_space = ['exploring_starts']
+    monte_mode_count = 0
+
 
 class GameItem(pygame.sprite.Sprite):
     def __init__(self, source_path, size):
@@ -79,7 +82,7 @@ class Grid():
         if self.mode == 'value':
             for i, row in enumerate(self.containers):
                 for j, value in enumerate(row):
-                    self.text_surface = self.text_font.render(str(round(float(value),2)), True, (0, 0, 0))
+                    self.text_surface = self.text_font.render(str(round(float(value), 2)), True, (0, 0, 0))
                     pos = (j*60+5, (i+1)*60-20)
                     screen.blit(self.text_surface, pos)
 
@@ -352,6 +355,41 @@ class Markov():
         return self.actions[np.random.choice(action_candidate, 1)[0]]
 
 
+class MonteCarlo():
+    def __init__(self, reward_grid, reward_category, actions, mode_space):
+        self.i_rewards = reward_grid  # immediate_reward
+
+        self.s_states = []  # search
+        self.c_states = []  # crash
+        self.e_states = []  # end
+        for i, row in enumerate(reward_grid):
+            for j, reward in enumerate(row):
+                if reward == reward_category[0]:
+                    self.s_states.append([i, j])
+                if reward == reward_category[1]:
+                    self.c_states.append([i, j])
+                if reward == reward_category[2]:
+                    self.e_states.append([i, j])
+
+        self.actions = actions
+
+        self.pi_values = np.zeros((reward_grid.shape[0], reward_grid.shape[1]), dtype=np.int)
+        self.q_values = np.zeros((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.float)
+        self.return_values = np.zeros_like(self.q_values, dtype=np.float)
+
+        self.mode_space = mode_space
+        self.mode = None
+
+    def exploring_starts(self):
+        # generate _episode
+        episodes = []
+        for i in range(2000):
+            episode = []
+            state = np.random.choice(self.s_states)
+            action = np.random.choice(self.actions)
+            print(state, action)
+
+
 def game_env_init():
     game = LoveBirdGame(GameConfig.caption, GameConfig.window_size)
 
@@ -399,6 +437,10 @@ def markov_env_init():
     return i_rewards, reward_category
 
 
+def monte_carlo_env_init():
+    return markov_env_init()
+
+
 def test_policy_evaluation():
     reward_grid = -np.ones((4, 4), dtype=np.int)
     reward_grid[0][0] = 0
@@ -413,8 +455,11 @@ def test_policy_evaluation():
 if __name__ == '__main__':
     np.set_printoptions(linewidth=400)
 
-    markov = Markov(*markov_env_init(), GameConfig.actions, GameConfig.gamma, GameConfig.markov_mode_space)
-    game, *game_obj = game_env_init()
-    game.loop(*game_obj, policy=markov)
+    # markov = Markov(*markov_env_init(), GameConfig.actions, GameConfig.gamma, GameConfig.markov_mode_space)
+    # game, *game_obj = game_env_init()
+    # game.loop(*game_obj, policy=markov)
+
+    monte_carlo = MonteCarlo(*monte_carlo_env_init(), GameConfig.actions, GameConfig.monte_mode_space)
+    monte_carlo.exploring_starts()
 
     # test_policy_evaluation()
