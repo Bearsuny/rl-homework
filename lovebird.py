@@ -38,7 +38,7 @@ class GameConfig:
     markov_mode_count = 0
 
     monte_mode_space = ['exploring_starts', 'on_policy']
-    monte_mode_count = 0
+    monte_mode_count = 1
 
     monte_on_policy_epsilon = 0.1
 
@@ -479,7 +479,7 @@ class MonteCarlo():
                     self.return_values_count[value[0][0]][value[0][1]][self.actions.index(value[1])] += 1
 
     def exploring_starts(self):
-        episodes = self.generate_episodes(10000)
+        episodes = self.generate_episodes(100)
         self.calculate_g_first_visit(episodes)
 
         for i in range(self.q_values.shape[0]):
