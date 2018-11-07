@@ -381,7 +381,7 @@ class MonteCarlo():
 
         self.actions = actions
 
-        self.q_values = np.ones((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.float) * -10000
+        self.q_values = np.ones((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.float) * -1000
         self.return_values = np.zeros((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.int)
         self.return_values_count = np.zeros((reward_grid.shape[0], reward_grid.shape[1], len(actions)), dtype=np.int)
 
@@ -395,7 +395,7 @@ class MonteCarlo():
         self.epsilon = args[0]
 
     def change_mode(self, mode):
-        self.q_values = np.ones_like(self.q_values, dtype=np.float) * -10000
+        self.q_values = np.ones_like(self.q_values, dtype=np.float) * -1000
         self.return_values = np.zeros_like(self.return_values, dtype=np.int)
         self.return_values_count = np.zeros_like(self.return_values_count, dtype=np.int)
         self.pi_values = np.ones_like(self.return_values, dtype=np.float) * (1 / len(self.actions))
