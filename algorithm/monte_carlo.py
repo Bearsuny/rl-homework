@@ -102,7 +102,7 @@ class MonteCarlo():
     def generate_episode_recurrent(self, state):
         episode = []
         state_init = state.copy()
-        while episode == [] or len(episode) > 1000:
+        while episode == [] or len(episode) > 200:
             episode = []
             state = state_init.copy()
             next_state = state_init.copy()

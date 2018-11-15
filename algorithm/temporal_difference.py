@@ -37,6 +37,7 @@ class TemporalDifference():
         for e_state in self.e_states:
             for action_id, action in enumerate(self.actions):
                 self.q_values[e_state[0]][e_state[1]][action_id] = 0
+                
         # can't arrive
         for s_state in self.s_states:
             for action_id, action in enumerate(self.actions):
