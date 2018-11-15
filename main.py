@@ -13,12 +13,12 @@ if __name__ == '__main__':
     np.set_printoptions(linewidth=400)
     sys.setrecursionlimit(10**6)
 
-    markov = Markov(*algorithm_init(),
-                    AlgorithmConfig.actions,
-                    AlgorithmConfig.gamma,
-                    AlgorithmConfig.markov_mode_space)
-    game, *game_obj = game_env_init()
-    game.loop(*game_obj, policy=markov)
+    # markov = Markov(*algorithm_init(),
+    #                 AlgorithmConfig.actions,
+    #                 AlgorithmConfig.gamma,
+    #                 AlgorithmConfig.markov_mode_space)
+    # game, *game_obj = game_env_init()
+    # game.loop(*game_obj, policy=markov)
 
     # monte_carlo = MonteCarlo(*algorithm_init(),
     #                          AlgorithmConfig.actions,
