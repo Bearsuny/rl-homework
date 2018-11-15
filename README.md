@@ -2,7 +2,7 @@
 
 # Reinforcement Learning Homework
 
-Homework for reinforcement learning course in NanKai University for graduate student.
+Homework about reinforcement learning course for graduate student in NanKai University.
 
 ## Course Book
 

@@ -152,25 +152,32 @@ class LoveBirdGame():
                         male_bird.reset()
 
                         # Markov
-                        policy.mode = policy.mode_space[AlgorithmConfig.markov_mode_count]
-                        if AlgorithmConfig.markov_mode_count < len(AlgorithmConfig.markov_mode_space) - 1:
-                            AlgorithmConfig.markov_mode_count += 1
-                        else:
-                            AlgorithmConfig.markov_mode_count = 0
-                        policy.mode = policy.mode_space[1]
-                        policy.change_mode(policy.mode)
-                        self.v_values_grid.containers = policy.v_values
+                        # policy.mode = policy.mode_space[AlgorithmConfig.markov_mode_count]
+                        # if AlgorithmConfig.markov_mode_count < len(AlgorithmConfig.markov_mode_space) - 1:
+                        #     AlgorithmConfig.markov_mode_count += 1
+                        # else:
+                        #     AlgorithmConfig.markov_mode_count = 0
+                        # policy.change_mode(policy.mode)
+                        # self.v_values_grid.containers = policy.v_values
 
                         # Monte Carlo
-                        # policy.mode = policy.mode_space[AlgorithmConfig.monte_mode_count]
-                        # if AlgorithmConfig.monte_mode_count < len(AlgorithmConfig.monte_mode_space) - 1:
-                        #     AlgorithmConfig.monte_mode_count += 1
+                        policy.mode = policy.mode_space[AlgorithmConfig.monte_mode_count]
+                        if AlgorithmConfig.monte_mode_count < len(AlgorithmConfig.monte_mode_space) - 1:
+                            AlgorithmConfig.monte_mode_count += 1
+                        else:
+                            AlgorithmConfig.monte_mode_count = 0
+                        policy.change_mode(policy.mode)
+
+                        # Temporal Difference
+                        # policy.mode = policy.mode_space[AlgorithmConfig.temporal_mode_count]
+                        # if AlgorithmConfig.temporal_mode_count < len(AlgorithmConfig.temporal_mode_space) - 1:
+                        #     AlgorithmConfig.temporal_mode_count += 1
                         # else:
-                        #     AlgorithmConfig.monte_mode_count = 0
+                        #     AlgorithmConfig.temporal_mode_count = 0
                         # policy.change_mode(policy.mode)
 
                     if event.key == K_ESCAPE:
-                        pygame.image.save(self.screen, os.path.join(GameConfig.root_path, GameConfig.save_path, f'{GameConfig.save_number}.png'))
+                        pygame.image.save(self.screen, os.path.join(GameConfig.root_path, GameConfig.save_path, GameConfig.homework_no, f'{GameConfig.save_number}.png'))
                         GameConfig.save_number += 1
                 elif event.type == QUIT:
                     pygame.quit()

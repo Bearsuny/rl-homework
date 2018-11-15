@@ -19,5 +19,6 @@ class GameConfig:
     root_path = '.'
     resource_path = 'assets'
     save_path = 'output'
+    homework_no = '06'
 
 

@@ -32,8 +32,26 @@ class MonteCarlo():
 
         self.epsilon = args[0]
 
+    def init_q_values(self):
+        # arbitrarily Q(s, a)
+        self.q_values = np.zeros((self.i_rewards.shape[0], self.i_rewards.shape[1], len(self.actions)))
+
+        # Q(terminal, *) = 0
+        for e_state in self.e_states:
+            for action_id, action in enumerate(self.actions):
+                self.q_values[e_state[0]][e_state[1]][action_id] = 0
+        # can't arrive
+        for s_state in self.s_states:
+            for action_id, action in enumerate(self.actions):
+                if s_state == self.get_next_state(s_state, action):
+                    self.q_values[s_state[0]][s_state[1]][action_id] = -1000
+        for c_state in self.c_states:
+            for action_id, action in enumerate(self.actions):
+                self.q_values[c_state[0]][c_state[1]][action_id] = -1000
+
     def change_mode(self, mode):
-        self.q_values = np.ones_like(self.q_values, dtype=np.float) * -1000
+        self.init_q_values()
+        # self.q_values = np.ones_like(self.q_values, dtype=np.float) * -1000
         self.return_values = np.zeros_like(self.return_values, dtype=np.int)
         self.return_values_count = np.zeros_like(self.return_values_count, dtype=np.int)
         self.pi_values = np.ones_like(self.return_values, dtype=np.float) * (1 / len(self.actions))
@@ -67,6 +85,20 @@ class MonteCarlo():
     #     episode.append((state, action))
     #     return self.generate_episode(next_state, episode)
 
+    def get_next_state(self, state, action):
+        next_state = state.copy()
+        if action == 'e':
+            next_state[1] += 1
+        if action == 'w':
+            next_state[1] -= 1
+        if action == 's':
+            next_state[0] += 1
+        if action == 'n':
+            next_state[0] -= 1
+        if not (next_state in self.s_states or next_state in self.e_states):
+            next_state = state.copy()
+        return next_state
+
     def generate_episode_recurrent(self, state):
         episode = []
         state_init = state.copy()
@@ -76,7 +108,13 @@ class MonteCarlo():
             next_state = state_init.copy()
             while not state in self.e_states:
                 if self.mode == 'exploring_starts':
-                    action = np.random.choice(self.actions)
+                    action_candidate = []
+                    for action_id, action in enumerate(self.actions):
+                        if self.q_values[state[0]][state[1]][self.actions.index(action)] == np.max(self.q_values[state[0]][state[1]]):
+                            action_candidate.append(action)
+                    action = np.random.choice(action_candidate)
+                    # print(action, self.q_values[state[0]][state[1]])
+                    # action = np.random.choice(self.actions)
                 elif self.mode == 'on_policy':
                     action = np.random.choice(self.actions, p=self.pi_values[state[0]][state[1]])
                 if action == 'e':
@@ -91,7 +129,7 @@ class MonteCarlo():
                     next_state = state.copy()
                 episode.append((state, action))
                 state = next_state.copy()
-                if len(episode) > 1000:
+                if len(episode) > 200:
                     break
         return episode
 
@@ -116,14 +154,16 @@ class MonteCarlo():
                     self.return_values_count[value[0][0]][value[0][1]][self.actions.index(value[1])] += 1
 
     def exploring_starts(self):
-        episodes = self.generate_episodes(100)
-        self.calculate_g_first_visit(episodes)
+        for i in range(100):
+            print(f'{i} ...')
+            episodes = self.generate_episodes(1)
+            self.calculate_g_first_visit(episodes)
 
-        for i in range(self.q_values.shape[0]):
-            for j in range(self.q_values.shape[1]):
-                for k in range(self.q_values.shape[2]):
-                    if self.return_values_count[i][j][k] != 0:
-                        self.q_values[i][j][k] = self.return_values[i][j][k] / self.return_values_count[i][j][k]
+            for i in range(self.q_values.shape[0]):
+                for j in range(self.q_values.shape[1]):
+                    for k in range(self.q_values.shape[2]):
+                        if self.return_values_count[i][j][k] != 0:
+                            self.q_values[i][j][k] = self.return_values[i][j][k] / self.return_values_count[i][j][k]
 
         print(self.q_values)
 
